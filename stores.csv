@@ -1,0 +1,121 @@
+Store_ID,Store_Name,Store_City,Store_Location,Store_Open_Date
+1,Maple Street Toys Louisville 1,"Louisville, KY",Downtown,1991-03-17
+2,Puzzle Planet San Antonio 1,"San Antonio, TX",Commercial,2018-11-26
+3,Wonderland Toys Orlando 1,"Orlando, FL",Mall,1991-11-10
+4,Spark & Play St. Paul 1,"St. Paul, MN",Downtown,2015-07-12
+5,Tiny Treasures Toys Riverside 1,"Riverside, CA",Residential,2002-04-06
+6,Rainbow Toy Market Sacramento 1,"Sacramento, CA",Residential,2005-12-30
+7,Puzzle Planet Las Vegas 1,"Las Vegas, NV",Downtown,2009-10-26
+8,Neighborhood Toy Co. Santa Rosa 1,"Santa Rosa, CA",Suburban,2015-07-08
+9,Space Ranger Toys Nashville 1,"Nashville, TN",Downtown,2024-09-09
+10,Board Game Barn Fayetteville 1,"Fayetteville, NC",Mall,2019-06-24
+11,Spark & Play Dallas 1,"Dallas, TX",Commercial,1998-03-02
+12,Tiny Treasures Toys San Diego 1,"San Diego, CA",Downtown,1985-02-23
+13,Space Ranger Toys Detroit 1,"Detroit, MI",Mall,1996-10-25
+14,Puzzle Planet Honolulu 1,"Honolulu, HI",Mall,2007-10-10
+15,Bluebird Toys Lexington 1,"Lexington, KY",Downtown,2013-01-18
+16,Rocketship Toys Chattanooga 1,"Chattanooga, TN",Mall,2007-10-10
+17,Mini Makers Asheville 1,"Asheville, NC",Downtown,2001-10-10
+18,Ocean Wave Toys Wichita 1,"Wichita, KS",Downtown,2019-12-06
+19,Bluebird Toys Gainesville 1,"Gainesville, FL",Residential,1985-01-10
+20,Mini Makers Oxnard 1,"Oxnard, CA",Commercial,1985-11-16
+21,Kids Quest Toys Santa Ana 1,"Santa Ana, CA",Suburban,2024-06-01
+22,City Lights Toys Aurora 1,"Aurora, IL",Mall,1995-09-29
+23,Wonderland Toys Irvine 1,"Irvine, CA",Downtown,2010-06-14
+24,Playtime Emporium Los Angeles 1,"Los Angeles, CA",Downtown,2006-10-20
+25,City Lights Toys Raleigh 1,"Raleigh, NC",Downtown,2019-02-13
+26,Board Game Barn Charleston 1,"Charleston, SC",Mall,1990-10-05
+27,Giggles & Gadgets Gilbert 1,"Gilbert, AZ",Commercial,2009-08-30
+28,Little Sprouts Toys Peoria 1,"Peoria, AZ",Downtown,2024-02-19
+29,Mini Makers Miami 1,"Miami, FL",Commercial,1994-07-03
+30,Bluebird Toys Naperville 1,"Naperville, IL",Residential,2017-09-29
+31,Dinosaur Dreams Toys Glendale 1,"Glendale, AZ",Downtown,1998-12-26
+32,Rainbow Toy Market Tallahassee 1,"Tallahassee, FL",Suburban,2014-02-25
+33,Maple Street Toys Dayton 1,"Dayton, OH",Commercial,2008-03-20
+34,Sunshine Toy Store Arlington 1,"Arlington, TX",Downtown,1995-01-30
+35,Playtime Emporium Fort Worth 1,"Fort Worth, TX",Commercial,2011-05-23
+36,Board Game Barn Minneapolis 1,"Minneapolis, MN",Downtown,1994-11-18
+37,Toy Haven Port St. Lucie 1,"Port St. Lucie, FL",Downtown,2013-04-23
+38,Wonderland Toys Oakland 1,"Oakland, CA",Downtown,2025-08-13
+39,Wonderland Toys Jersey City 1,"Jersey City, NJ",Mall,1988-03-06
+40,Puzzle Planet Fresno 1,"Fresno, CA",Downtown,2015-01-04
+41,Classic Toy Chest Modesto 1,"Modesto, CA",Downtown,1990-12-08
+42,Space Ranger Toys Philadelphia 1,"Philadelphia, PA",Suburban,2010-08-13
+43,Creative Play Toys Irving 1,"Irving, TX",Commercial,2020-03-13
+44,Classic Toy Chest Corpus Christi 1,"Corpus Christi, TX",Mall,1993-07-17
+45,Kids Quest Toys Plano 1,"Plano, TX",Downtown,2004-05-03
+46,Maple Street Toys San Francisco 1,"San Francisco, CA",Commercial,2005-12-13
+47,Neighborhood Toy Co. Worcester 1,"Worcester, MA",Mall,2015-03-17
+48,Spark & Play Austin 1,"Austin, TX",Suburban,1989-06-01
+49,Wonderland Toys Eugene 1,"Eugene, OR",Commercial,2000-03-22
+50,Mountain Trail Toys Kansas City 1,"Kansas City, MO",Mall,1996-02-26
+51,Bright Star Toy Shop Birmingham 1,"Birmingham, AL",Downtown,2005-02-15
+52,Toy Galaxy Madison 1,"Madison, WI",Commercial,1997-06-30
+53,Sunshine Toy Store Laredo 1,"Laredo, TX",Downtown,1988-05-20
+54,Sunshine Toy Store Tulsa 1,"Tulsa, OK",Mall,2023-05-26
+55,Board Game Barn Toledo 1,"Toledo, OH",Downtown,2014-04-03
+56,Board Game Barn Oklahoma City 1,"Oklahoma City, OK",Mall,1989-03-09
+57,Bluebird Toys Norfolk 1,"Norfolk, VA",Mall,1995-08-09
+58,Little Sprouts Toys Savannah 1,"Savannah, GA",Commercial,2006-08-05
+59,Bright Star Toy Shop Little Rock 1,"Little Rock, AR",Mall,2025-06-25
+60,Wonderland Toys Scottsdale 1,"Scottsdale, AZ",Downtown,1985-02-05
+61,Rainbow Toy Market Baltimore 1,"Baltimore, MD",Downtown,2020-03-04
+62,Mountain Trail Toys Baton Rouge 1,"Baton Rouge, LA",Commercial,2003-12-23
+63,Dinosaur Dreams Toys Moreno Valley 1,"Moreno Valley, CA",Suburban,2020-02-21
+64,Board Game Barn Yonkers 1,"Yonkers, NY",Airport,2006-10-31
+65,Toy Galaxy Spokane 1,"Spokane, WA",Downtown,1994-10-07
+66,Wonderland Toys Knoxville 1,"Knoxville, TN",Residential,2009-04-28
+67,Wonderland Toys Huntington Beach 1,"Huntington Beach, CA",Mall,1987-07-26
+68,Wonderland Toys Boulder 1,"Boulder, CO",Residential,2007-07-23
+69,Bluebird Toys Amarillo 1,"Amarillo, TX",Mall,1992-01-24
+70,Wonderland Toys Chandler 1,"Chandler, AZ",Suburban,1988-08-05
+71,Neighborhood Toy Co. Rochester 1,"Rochester, NY",Downtown,2011-09-11
+72,Playtime Emporium Boston 1,"Boston, MA",Airport,1995-07-21
+73,Rainbow Toy Market Tampa 1,"Tampa, FL",Downtown,2024-12-08
+74,Creative Play Toys Huntsville 1,"Huntsville, AL",Downtown,2011-09-02
+75,Wonderland Toys Newport News 1,"Newport News, VA",Residential,2003-10-22
+76,Giggles & Gadgets Mesa 1,"Mesa, AZ",Residential,2008-06-14
+77,Happy Hippo Toys Buffalo 1,"Buffalo, NY",Suburban,1994-03-01
+78,Giggles & Gadgets San Jose 1,"San Jose, CA",Airport,1995-09-16
+79,Storybook Toys Grand Rapids 1,"Grand Rapids, MI",Commercial,2015-02-17
+80,Spark & Play El Paso 1,"El Paso, TX",Commercial,1999-03-09
+81,Bluebird Toys Salt Lake City 1,"Salt Lake City, UT",Mall,1988-04-03
+82,Toy Haven Albuquerque 1,"Albuquerque, NM",Commercial,2010-04-04
+83,Kids Quest Toys Winston-Salem 1,"Winston-Salem, NC",Downtown,1994-07-25
+84,Puzzle Planet Ann Arbor 1,"Ann Arbor, MI",Downtown,2000-08-28
+85,Cedar Toy Corner Montgomery 1,"Montgomery, AL",Downtown,1995-12-17
+86,Maple Street Toys Des Moines 1,"Des Moines, IA",Commercial,2004-08-28
+87,City Lights Toys Springfield 1,"Springfield, MO",Residential,1998-07-28
+88,Mini Makers Syracuse 1,"Syracuse, NY",Suburban,2021-03-16
+89,Spark & Play Omaha 1,"Omaha, NE",Residential,2014-12-17
+90,City Lights Toys Columbia 1,"Columbia, SC",Residential,2014-10-04
+91,Kids Quest Toys Fremont 1,"Fremont, CA",Suburban,1991-01-10
+92,Storybook Toys Phoenix 1,"Phoenix, AZ",Downtown,1989-10-20
+93,Space Ranger Toys Tempe 1,"Tempe, AZ",Residential,1997-03-21
+94,Rocketship Toys Cleveland 1,"Cleveland, OH",Residential,2017-03-11
+95,Happy Hippo Toys Durham 1,"Durham, NC",Downtown,2013-06-14
+96,Neighborhood Toy Co. San Bernardino 1,"San Bernardino, CA",Downtown,2006-12-01
+97,Storybook Toys Memphis 1,"Memphis, TN",Suburban,2022-12-15
+98,Wonderland Toys Chesapeake 1,"Chesapeake, VA",Downtown,2004-01-01
+99,City Lights Toys Stockton 1,"Stockton, CA",Downtown,1985-02-28
+100,Happy Hippo Toys Atlanta 1,"Atlanta, GA",Mall,2013-07-31
+101,Storybook Toys Fort Collins 1,"Fort Collins, CO",Downtown,2004-10-27
+102,Board Game Barn Iowa City 1,"Iowa City, IA",Airport,2010-02-28
+103,Toy Haven Akron 1,"Akron, OH",Downtown,2024-08-12
+104,Dinosaur Dreams Toys Columbus 1,"Columbus, OH",Suburban,2009-06-22
+105,Wonderland Toys Santa Clarita 1,"Santa Clarita, CA",Mall,2011-02-17
+106,Board Game Barn St. Petersburg 1,"St. Petersburg, FL",Downtown,1990-09-20
+107,Wonderland Toys Portland 1,"Portland, OR",Commercial,2025-04-29
+108,Bluebird Toys Fort Lauderdale 1,"Fort Lauderdale, FL",Mall,2023-08-11
+109,Wonderland Toys Lincoln 1,"Lincoln, NE",Mall,1994-06-04
+110,Giggles & Gadgets Lubbock 1,"Lubbock, TX",Downtown,1989-08-12
+111,Maple Street Toys Indianapolis 1,"Indianapolis, IN",Mall,2024-08-29
+112,Neighborhood Toy Co. Cincinnati 1,"Cincinnati, OH",Commercial,2012-11-03
+113,Space Ranger Toys Oceanside 1,"Oceanside, CA",Downtown,1995-08-15
+114,Neighborhood Toy Co. Garland 1,"Garland, TX",Downtown,2020-11-18
+115,Mountain Trail Toys Pittsburgh 1,"Pittsburgh, PA",Downtown,2003-07-01
+116,Toy Haven New Orleans 1,"New Orleans, LA",Downtown,1999-11-26
+117,Mountain Trail Toys Richmond 1,"Richmond, VA",Suburban,2020-12-26
+118,Giggles & Gadgets St. Louis 1,"St. Louis, MO",Mall,2021-05-15
+119,Adventure Toys Virginia Beach 1,"Virginia Beach, VA",Downtown,2020-04-27
+120,Dinosaur Dreams Toys Aurora 1,"Aurora, CO",Downtown,2024-02-15

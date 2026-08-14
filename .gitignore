@@ -1,0 +1,6 @@
+env/
+harryenv/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+.vscode/
