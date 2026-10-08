@@ -89,7 +89,7 @@ The JSON must contain ONLY these three fields:
             "recommendations": {
                 "type": "array",
                 "minItems": 1,
-                "maxItems": 2,
+                "maxItems": 3,
                 "items": {
                     "type": "string"
                 }
