@@ -1,735 +1,287 @@
-import json
 import re
-
 import pandas as pd
 
 from ai_client import ask_ai
 
 
-# =========================================================
+# ---------------------------------------------------------
 # HELPERS
-# =========================================================
+# ---------------------------------------------------------
 
 def _normalise(text):
-    """Make text easier to compare with column names."""
-
-    text = str(text).lower().strip()
-
-    text = re.sub(
-        r"[^a-z0-9]+",
-        " ",
-        text
-    )
-
     return re.sub(
         r"\s+",
         " ",
-        text
-    ).strip()
-
-
-def _find_column(question, columns):
-    """
-    Find the dataset column most closely matching
-    words used in the user's question.
-    """
-
-    question_normalised = _normalise(question)
-
-    # Exact column-name matches first
-    exact_matches = []
-
-    for column in columns:
-
-        column_normalised = _normalise(column)
-
-        if column_normalised in question_normalised:
-            exact_matches.append(
-                (column, len(column_normalised))
-            )
-
-    if exact_matches:
-
-        exact_matches.sort(
-            key=lambda x: x[1],
-            reverse=True
-        )
-
-        return exact_matches[0][0]
-
-    # Match individual words
-    question_words = set(
-        question_normalised.split()
+        str(text).strip().lower()
     )
 
-    candidates = []
 
-    for column in columns:
+def _find_column(df, keywords):
 
-        column_words = set(
-            _normalise(column).split()
-        )
+    columns = list(df.columns)
 
-        overlap = len(
-            question_words & column_words
-        )
+    # Exact / substring matching
+    for keyword in keywords:
 
-        if overlap > 0:
+        keyword = _normalise(keyword)
 
-            candidates.append(
-                (column, overlap)
-            )
+        for column in columns:
 
-    if candidates:
-
-        candidates.sort(
-            key=lambda x: x[1],
-            reverse=True
-        )
-
-        return candidates[0][0]
+            if keyword in _normalise(column):
+                return column
 
     return None
 
 
 def _find_numeric_columns(df):
-    return df.select_dtypes(
-        include="number"
-    ).columns.tolist()
+
+    return list(
+        df.select_dtypes(
+            include="number"
+        ).columns
+    )
 
 
-def _find_group_column(df, question, metric=None):
-    """
-    Find a categorical/grouping column mentioned
-    in the question.
-    """
+def _find_group_column(df):
 
-    candidates = []
+    categorical = list(
+        df.select_dtypes(
+            include=["object", "category", "bool"]
+        ).columns
+    )
 
-    for column in df.columns:
-
-        if metric is not None and column == metric:
-            continue
-
-        normalised = _normalise(column)
-
-        if normalised and normalised in _normalise(question):
-
-            if (
-                df[column].dtype == "object"
-                or str(df[column].dtype).startswith("category")
-                or df[column].nunique(dropna=True) <= 50
-            ):
-
-                candidates.append(column)
-
-    if candidates:
-
-        return max(
-            candidates,
-            key=lambda x: len(_normalise(x))
-        )
+    if categorical:
+        return categorical[0]
 
     return None
 
 
-def _format_number(value):
-    """Readable numeric formatting."""
+def _find_price_column(df):
 
-    if pd.isna(value):
-        return "N/A"
-
-    value = float(value)
-
-    if value.is_integer():
-        return f"{int(value):,}"
-
-    return f"{value:,.2f}"
-
-
-def _format_percentage(value):
-    if pd.isna(value):
-        return "N/A"
-
-    return f"{float(value):.2f}%"
-
-
-def _contains_any(question, words):
-    question = _normalise(question)
-
-    return any(
-        word in question
-        for word in words
+    return _find_column(
+        df,
+        [
+            "price",
+            "selling price",
+            "unit price",
+            "cost",
+            "amount"
+        ]
     )
 
 
-# =========================================================
-# PROFIT / PERCENTAGE HELPERS
-# =========================================================
-
 def _find_profit_column(df):
-    candidates = [
-        column
-        for column in df.columns
-        if "profit" in _normalise(column)
-    ]
 
-    return candidates[0] if candidates else None
+    return _find_column(
+        df,
+        [
+            "profit",
+            "net profit",
+            "gross profit"
+        ]
+    )
 
 
 def _find_revenue_column(df):
-    candidates = [
-        column
-        for column in df.columns
-        if any(
-            word in _normalise(column)
-            for word in [
-                "revenue",
-                "sales",
-                "sale",
-                "income"
-            ]
-        )
-    ]
 
-    return candidates[0] if candidates else None
+    return _find_column(
+        df,
+        [
+            "revenue",
+            "sales",
+            "sale",
+            "total sales"
+        ]
+    )
 
 
-def _find_price_column(df):
-    candidates = [
-        column
-        for column in df.columns
-        if "price" in _normalise(column)
-    ]
-
-    return candidates[0] if candidates else None
-
+# ---------------------------------------------------------
+# DIRECT CALCULATIONS
+# ---------------------------------------------------------
 
 def _calculate_profit_percentage(df):
-    """
-    Calculate profit percentage when suitable columns exist.
-
-    Preferred formula:
-
-        profit / revenue * 100
-
-    If revenue does not exist but price and cost exist,
-    calculate:
-
-        (price - cost) / price * 100
-    """
 
     profit_column = _find_profit_column(df)
-    revenue_column = _find_revenue_column(df)
 
-    if (
-        profit_column is not None
-        and revenue_column is not None
-    ):
-
-        revenue = pd.to_numeric(
-            df[revenue_column],
-            errors="coerce"
-        )
+    if profit_column:
 
         profit = pd.to_numeric(
             df[profit_column],
             errors="coerce"
-        )
+        ).dropna()
 
-        percentage = (
-            profit
-            .div(revenue)
-            .mul(100)
-        )
-
-        return (
-            percentage,
-            f"{profit_column} / {revenue_column} × 100"
-        )
-
-    price_column = _find_price_column()
-
-    if price_column is not None:
-
-        cost_candidates = [
-            column
-            for column in df.columns
-            if "cost" in _normalise(column)
-        ]
-
-        if cost_candidates:
-
-            cost_column = cost_candidates[0]
-
-            price = pd.to_numeric(
-                df[price_column],
-                errors="coerce"
-            )
-
-            cost = pd.to_numeric(
-                df[cost_column],
-                errors="coerce"
-            )
-
-            percentage = (
-                (price - cost)
-                .div(price)
-                .mul(100)
-            )
+        if len(profit) > 0:
 
             return (
-                percentage,
-                f"({price_column} - {cost_column}) / {price_column} × 100"
+                f"The average profit percentage is not directly "
+                f"available because the dataset contains a profit "
+                f"column but no clearly identified revenue/cost "
+                f"basis for calculating the percentage."
             )
 
-    return None, None
+    price_column = _find_price_column(df)
+
+    if price_column:
+
+        price = pd.to_numeric(
+            df[price_column],
+            errors="coerce"
+        ).dropna()
+
+        if len(price) > 0:
+
+            return (
+                f"The average value of '{price_column}' is "
+                f"{price.mean():,.2f}."
+            )
+
+    return None
 
 
-# =========================================================
-# DIRECT DATA ANALYSIS ENGINE
-# =========================================================
+def _direct_answer(df, question):
 
-def _answer_directly(question, df):
+    q = _normalise(question)
 
-    question_normalised = _normalise(
-        question
-    )
-
-    numeric_columns = _find_numeric_columns(
-        df
-    )
+    numeric_columns = _find_numeric_columns(df)
 
     # -----------------------------------------------------
-    # EMPTY DATASET
+    # COUNT
     # -----------------------------------------------------
 
-    if df.empty:
+    if (
+        "how many rows" in q
+        or "number of rows" in q
+        or "how many records" in q
+        or "number of records" in q
+    ):
 
-        return (
-            "The uploaded dataset contains no rows, "
-            "so there is nothing to calculate."
-        )
+        return f"The dataset contains {len(df):,} rows."
+
 
     # -----------------------------------------------------
     # TOTAL / SUM
     # -----------------------------------------------------
 
-    if _contains_any(
-        question_normalised,
-        [
-            "total",
-            "sum",
-            "overall"
-        ]
+    if (
+        "total" in q
+        or "sum" in q
     ):
 
-        metric = _find_column(
-            question,
-            numeric_columns
-        )
+        target_column = None
 
-        if metric:
+        if "revenue" in q:
+            target_column = _find_revenue_column(df)
 
-            value = pd.to_numeric(
-                df[metric],
+        elif "profit" in q:
+            target_column = _find_profit_column(df)
+
+        elif "sales" in q:
+            target_column = _find_revenue_column(df)
+
+        else:
+
+            for column in numeric_columns:
+
+                if _normalise(column) in q:
+                    target_column = column
+                    break
+
+        if target_column:
+
+            values = pd.to_numeric(
+                df[target_column],
                 errors="coerce"
-            ).sum()
+            ).dropna()
 
-            return (
-                f"The total {metric} is "
-                f"**{_format_number(value)}**."
-            )
+            if len(values) > 0:
 
-    # -----------------------------------------------------
-    # AVERAGE / MEAN
-    # -----------------------------------------------------
-
-    if _contains_any(
-        question_normalised,
-        [
-            "average",
-            "mean",
-            "avg"
-        ]
-    ):
-
-        metric = _find_column(
-            question,
-            numeric_columns
-        )
-
-        if metric:
-
-            group = _find_group_column(
-                df,
-                question,
-                metric
-            )
-
-            # ---------------------------------------------
-            # GROUPED AVERAGE
-            # ---------------------------------------------
-
-            if group:
-
-                grouped = (
-                    df.groupby(group)[metric]
-                    .mean()
-                    .dropna()
-                    .sort_values(
-                        ascending=False
-                    )
+                return (
+                    f"The total {target_column} is "
+                    f"{values.sum():,.2f}."
                 )
 
-                if not grouped.empty:
 
-                    top = grouped.iloc[0]
+    # -----------------------------------------------------
+    # AVERAGE
+    # -----------------------------------------------------
 
-                    return (
-                        f"The highest average **{metric}** "
-                        f"is **{_format_number(top)}**, "
-                        f"achieved by **{grouped.index[0]}**."
-                    )
+    if (
+        "average" in q
+        or "mean" in q
+    ):
 
-            # ---------------------------------------------
-            # OVERALL AVERAGE
-            # ---------------------------------------------
+        target_column = None
 
-            value = pd.to_numeric(
-                df[metric],
+        for column in numeric_columns:
+
+            if _normalise(column) in q:
+
+                target_column = column
+                break
+
+        if target_column is None:
+
+            if "revenue" in q:
+                target_column = _find_revenue_column(df)
+
+            elif "profit" in q:
+                target_column = _find_profit_column(df)
+
+            elif "sales" in q:
+                target_column = _find_revenue_column(df)
+
+        if target_column:
+
+            values = pd.to_numeric(
+                df[target_column],
                 errors="coerce"
-            ).mean()
+            ).dropna()
 
-            return (
-                f"The average {metric} is "
-                f"**{_format_number(value)}**."
-            )
+            if len(values) > 0:
+
+                return (
+                    f"The average {target_column} is "
+                    f"{values.mean():,.2f}."
+                )
+
 
     # -----------------------------------------------------
     # MEDIAN
     # -----------------------------------------------------
 
-    if "median" in question_normalised:
+    if "median" in q:
 
-        metric = _find_column(
-            question,
-            numeric_columns
-        )
+        target_column = None
 
-        if metric:
+        for column in numeric_columns:
 
-            value = pd.to_numeric(
-                df[metric],
+            if _normalise(column) in q:
+
+                target_column = column
+                break
+
+        if target_column:
+
+            values = pd.to_numeric(
+                df[target_column],
                 errors="coerce"
-            ).median()
+            ).dropna()
 
-            return (
-                f"The median {metric} is "
-                f"**{_format_number(value)}**."
-            )
-
-    # -----------------------------------------------------
-    # HIGHEST / MAXIMUM / MAX
-    # -----------------------------------------------------
-
-    if _contains_any(
-        question_normalised,
-        [
-            "highest",
-            "maximum",
-            "max",
-            "largest",
-            "top"
-        ]
-    ):
-
-        # ---------------------------------------------
-        # PROFIT PERCENTAGE
-        # ---------------------------------------------
-
-        if (
-            "percentage" in question_normalised
-            or "percent" in question_normalised
-            or "margin" in question_normalised
-        ):
-
-            percentages, formula = (
-                _calculate_profit_percentage(df)
-            )
-
-            if percentages is not None:
-
-                valid = percentages.dropna()
-
-                if not valid.empty:
-
-                    index = valid.idxmax()
-                    value = valid.loc[index]
-
-                    group = _find_group_column(
-                        df,
-                        question
-                    )
-
-                    if group:
-
-                        group_value = df.loc[
-                            index,
-                            group
-                        ]
-
-                        return (
-                            f"The highest profit percentage "
-                            f"is **{_format_percentage(value)}**, "
-                            f"for **{group_value}**."
-                        )
-
-                    return (
-                        f"The highest profit percentage is "
-                        f"**{_format_percentage(value)}**."
-                    )
-
-        metric = _find_column(
-            question,
-            numeric_columns
-        )
-
-        if metric:
-
-            group = _find_group_column(
-                df,
-                question,
-                metric
-            )
-
-            # -----------------------------------------
-            # HIGHEST GROUP TOTAL
-            # -----------------------------------------
-
-            if group:
-
-                grouped = (
-                    df.groupby(group)[metric]
-                    .sum()
-                    .dropna()
-                    .sort_values(
-                        ascending=False
-                    )
-                )
-
-                if not grouped.empty:
-
-                    return (
-                        f"The highest total {metric} is "
-                        f"**{_format_number(grouped.iloc[0])}**, "
-                        f"for **{grouped.index[0]}**."
-                    )
-
-            # -----------------------------------------
-            # HIGHEST RAW VALUE
-            # -----------------------------------------
-
-            series = pd.to_numeric(
-                df[metric],
-                errors="coerce"
-            )
-
-            index = series.idxmax()
-
-            value = series.loc[index]
-
-            return (
-                f"The highest {metric} is "
-                f"**{_format_number(value)}**."
-            )
-
-    # -----------------------------------------------------
-    # LOWEST / MINIMUM / MIN
-    # -----------------------------------------------------
-
-    if _contains_any(
-        question_normalised,
-        [
-            "lowest",
-            "minimum",
-            "min",
-            "smallest",
-            "bottom"
-        ]
-    ):
-
-        metric = _find_column(
-            question,
-            numeric_columns
-        )
-
-        if metric:
-
-            group = _find_group_column(
-                df,
-                question,
-                metric
-            )
-
-            if group:
-
-                grouped = (
-                    df.groupby(group)[metric]
-                    .sum()
-                    .dropna()
-                    .sort_values()
-                )
-
-                if not grouped.empty:
-
-                    return (
-                        f"The lowest total {metric} is "
-                        f"**{_format_number(grouped.iloc[0])}**, "
-                        f"for **{grouped.index[0]}**."
-                    )
-
-            series = pd.to_numeric(
-                df[metric],
-                errors="coerce"
-            )
-
-            index = series.idxmin()
-
-            value = series.loc[index]
-
-            return (
-                f"The lowest {metric} is "
-                f"**{_format_number(value)}**."
-            )
-
-    # -----------------------------------------------------
-    # MOST COMMON / FREQUENCY
-    # -----------------------------------------------------
-
-    if _contains_any(
-        question_normalised,
-        [
-            "most common",
-            "appears most",
-            "most frequent",
-            "highest frequency",
-            "best rating",
-            "popular"
-        ]
-    ):
-
-        column = _find_column(
-            question,
-            df.columns
-        )
-
-        if column:
-
-            counts = (
-                df[column]
-                .dropna()
-                .value_counts()
-            )
-
-            if not counts.empty:
+            if len(values) > 0:
 
                 return (
-                    f"**{counts.index[0]}** is the most "
-                    f"frequent {column}, appearing "
-                    f"**{int(counts.iloc[0]):,} times**."
+                    f"The median {target_column} is "
+                    f"{values.median():,.2f}."
                 )
 
-    # -----------------------------------------------------
-    # COUNT / HOW MANY
-    # -----------------------------------------------------
-
-    if _contains_any(
-        question_normalised,
-        [
-            "how many",
-            "count",
-            "number of"
-        ]
-    ):
-
-        column = _find_column(
-            question,
-            df.columns
-        )
-
-        if column:
-
-            count = int(
-                df[column]
-                .notna()
-                .sum()
-            )
-
-            return (
-                f"There are **{count:,} non-missing "
-                f"values** in {column}."
-            )
-
-        return (
-            f"The dataset contains "
-            f"**{len(df):,} rows**."
-        )
-
-    # -----------------------------------------------------
-    # PERCENTAGE OF CATEGORY
-    # -----------------------------------------------------
-
-    if (
-        "percentage" in question_normalised
-        or "percent" in question_normalised
-        or "%" in question
-    ):
-
-        column = _find_column(
-            question,
-            df.columns
-        )
-
-        if column:
-
-            # Find a quoted/category-like value
-            # by checking actual unique values.
-            values = (
-                df[column]
-                .dropna()
-                .astype(str)
-                .unique()
-            )
-
-            question_lower = question.lower()
-
-            for value in values:
-
-                if str(value).lower() in question_lower:
-
-                    percentage = (
-                        df[column]
-                        .astype(str)
-                        .str.lower()
-                        .eq(str(value).lower())
-                        .mean()
-                        * 100
-                    )
-
-                    return (
-                        f"**{_format_percentage(percentage)}** "
-                        f"of the dataset belongs to "
-                        f"**{value}** in {column}."
-                    )
 
     # -----------------------------------------------------
     # TOP N
     # -----------------------------------------------------
 
     top_match = re.search(
-        r"(?:top|best)\s+(\d+)",
-        question_normalised
+        r"(?:top|highest)\s+(\d+)",
+        q
     )
 
     if top_match:
@@ -738,49 +290,200 @@ def _answer_directly(question, df):
             top_match.group(1)
         )
 
-        metric = _find_column(
-            question,
-            numeric_columns
-        )
+        target_column = None
 
-        if metric:
+        for column in numeric_columns:
 
-            group = _find_group_column(
-                df,
-                question,
-                metric
-            )
+            if _normalise(column) in q:
 
-            if group:
+                target_column = column
+                break
+
+        if target_column is None:
+
+            if "revenue" in q:
+                target_column = _find_revenue_column(df)
+
+            elif "profit" in q:
+                target_column = _find_profit_column(df)
+
+            elif "sales" in q:
+                target_column = _find_revenue_column(df)
+
+        if target_column:
+
+            group_column = _find_group_column(df)
+
+            if group_column:
 
                 grouped = (
-                    df.groupby(group)[metric]
+                    df.groupby(group_column)[target_column]
                     .sum()
-                    .dropna()
-                    .sort_values(
-                        ascending=False
-                    )
+                    .sort_values(ascending=False)
                     .head(n)
                 )
 
-                if not grouped.empty:
+                if len(grouped) > 0:
 
-                    lines = []
+                    result = []
 
-                    for rank, (name, value) in enumerate(
-                        grouped.items(),
-                        start=1
-                    ):
+                    for name, value in grouped.items():
 
-                        lines.append(
-                            f"{rank}. **{name}** — "
-                            f"{_format_number(value)}"
+                        result.append(
+                            f"{name}: {value:,.2f}"
                         )
 
                     return (
-                        f"Top {n} by {metric}:\n\n"
-                        + "\n".join(lines)
+                        f"Top {n} by {target_column}:\n\n"
+                        + "\n".join(
+                            f"{i + 1}. {item}"
+                            for i, item in enumerate(result)
+                        )
                     )
+
+
+    # -----------------------------------------------------
+    # HIGHEST
+    # -----------------------------------------------------
+
+    if (
+        "highest" in q
+        or "maximum" in q
+        or "max" in q
+    ):
+
+        target_column = None
+
+        for column in numeric_columns:
+
+            if _normalise(column) in q:
+
+                target_column = column
+                break
+
+        if target_column is None:
+
+            if "revenue" in q:
+                target_column = _find_revenue_column(df)
+
+            elif "profit" in q:
+                target_column = _find_profit_column(df)
+
+            elif "sales" in q:
+                target_column = _find_revenue_column(df)
+
+        if target_column:
+
+            values = pd.to_numeric(
+                df[target_column],
+                errors="coerce"
+            )
+
+            if values.notna().any():
+
+                maximum = values.max()
+
+                return (
+                    f"The highest {target_column} is "
+                    f"{maximum:,.2f}."
+                )
+
+
+    # -----------------------------------------------------
+    # LOWEST
+    # -----------------------------------------------------
+
+    if (
+        "lowest" in q
+        or "minimum" in q
+        or "min" in q
+    ):
+
+        target_column = None
+
+        for column in numeric_columns:
+
+            if _normalise(column) in q:
+
+                target_column = column
+                break
+
+        if target_column is None:
+
+            if "revenue" in q:
+                target_column = _find_revenue_column(df)
+
+            elif "profit" in q:
+                target_column = _find_profit_column(df)
+
+            elif "sales" in q:
+                target_column = _find_revenue_column(df)
+
+        if target_column:
+
+            values = pd.to_numeric(
+                df[target_column],
+                errors="coerce"
+            )
+
+            if values.notna().any():
+
+                minimum = values.min()
+
+                return (
+                    f"The lowest {target_column} is "
+                    f"{minimum:,.2f}."
+                )
+
+
+    # -----------------------------------------------------
+    # MOST COMMON CATEGORY
+    # -----------------------------------------------------
+
+    if (
+        "most common" in q
+        or "most popular" in q
+        or "most frequent" in q
+    ):
+
+        group_column = _find_group_column(df)
+
+        if group_column:
+
+            counts = (
+                df[group_column]
+                .value_counts()
+            )
+
+            if len(counts) > 0:
+
+                value = counts.index[0]
+                count = counts.iloc[0]
+
+                return (
+                    f"The most common value in "
+                    f"'{group_column}' is '{value}', "
+                    f"appearing {count:,} times."
+                )
+
+
+    # -----------------------------------------------------
+    # PROFIT PERCENTAGE
+    # -----------------------------------------------------
+
+    if (
+        "profit percentage" in q
+        or "profit margin" in q
+        or "profit %" in q
+    ):
+
+        result = _calculate_profit_percentage(
+            df
+        )
+
+        if result:
+            return result
+
 
     # -----------------------------------------------------
     # NO DIRECT ANSWER
@@ -789,160 +492,106 @@ def _answer_directly(question, df):
     return None
 
 
-# =========================================================
+# ---------------------------------------------------------
 # AI FALLBACK
-# =========================================================
+# ---------------------------------------------------------
 
-def _build_small_ai_context(df):
+def _ai_answer(df, question):
 
-    context = {
-        "rows": len(df),
-        "columns": list(df.columns)
-    }
+    numeric_columns = _find_numeric_columns(df)
 
-    numeric_columns = _find_numeric_columns(
-        df
-    )
+    statistics = {}
 
-    numeric_stats = {}
+    for column in numeric_columns[:15]:
 
-    for column in numeric_columns:
-
-        series = pd.to_numeric(
+        values = pd.to_numeric(
             df[column],
             errors="coerce"
         ).dropna()
 
-        if series.empty:
+        if len(values) == 0:
             continue
 
-        numeric_stats[column] = {
-            "mean": float(series.mean()),
-            "median": float(series.median()),
-            "min": float(series.min()),
-            "max": float(series.max()),
-            "sum": float(series.sum())
+        statistics[column] = {
+            "count": int(values.count()),
+            "mean": float(values.mean()),
+            "min": float(values.min()),
+            "max": float(values.max()),
         }
 
-    context["numeric_statistics"] = (
-        numeric_stats
+    categorical_columns = list(
+        df.select_dtypes(
+            include=["object", "category", "bool"]
+        ).columns
     )
 
-    categorical = {}
+    categorical_summary = {}
 
-    for column in df.columns:
+    for column in categorical_columns[:10]:
 
-        if (
-            df[column].dtype == "object"
-            or str(df[column].dtype).startswith("category")
-        ):
+        values = df[column].dropna()
 
-            unique = df[column].nunique(
-                dropna=True
-            )
+        if len(values) == 0:
+            continue
 
-            if unique <= 30:
-
-                counts = (
-                    df[column]
-                    .dropna()
-                    .value_counts()
-                    .head(20)
-                )
-
-                categorical[column] = {
-                    str(k): int(v)
-                    for k, v in counts.items()
-                }
-
-    context["categorical_frequencies"] = (
-        categorical
-    )
-
-    return context
-
-
-def _ask_ai_fallback(question, df):
-
-    context = _build_small_ai_context(
-        df
-    )
+        categorical_summary[column] = (
+            values.value_counts()
+            .head(10)
+            .to_dict()
+        )
 
     prompt = f"""
 You are an AI Data Analyst.
 
-Answer the user's question using ONLY the supplied
-dataset statistics.
+Answer the user's question using ONLY the dataset
+information provided below.
 
 Do not invent values.
 
-The Python application has already read the actual
-uploaded dataset and calculated the statistics below.
+If the exact answer cannot be determined from the
+provided information, clearly say that.
 
-DATASET:
-{json.dumps(context, indent=2, default=str)}
+Dataset shape:
+Rows: {len(df)}
+Columns: {len(df.columns)}
 
-QUESTION:
+Columns:
+{list(df.columns)}
+
+Numeric statistics:
+{statistics}
+
+Categorical summaries:
+{categorical_summary}
+
+User question:
 {question}
 
-If the exact answer cannot be determined from these
-statistics, clearly explain what information is missing.
-
-Keep the answer concise and direct.
+Give a concise, useful answer.
 """
 
     return ask_ai(
         prompt,
-        max_tokens=350
+        max_tokens=500
     )
 
 
-# =========================================================
+# ---------------------------------------------------------
 # MAIN FUNCTION
-# =========================================================
+# ---------------------------------------------------------
 
-def ask_dataset(
-    question,
-    analysis,
-    summary,
-    df
-):
+def ask_dataset(df, question):
 
-    question = str(
+    direct_answer = _direct_answer(
+        df,
         question
-    ).strip()
-
-    if not question:
-
-        return "Please enter a question."
-
-    # -----------------------------------------------------
-    # TRY PYTHON FIRST
-    # -----------------------------------------------------
-
-    direct_answer = _answer_directly(
-        question,
-        df
     )
 
-    if direct_answer is not None:
+    if direct_answer:
 
         return direct_answer
 
-    # -----------------------------------------------------
-    # AI ONLY WHEN PYTHON CANNOT CONFIDENTLY ANSWER
-    # -----------------------------------------------------
-
-    try:
-
-        return _ask_ai_fallback(
-            question,
-            df
-        )
-
-    except Exception as e:
-
-        return (
-            "I couldn't answer that question right now. "
-            f"AI fallback error: {e}"
-        )
+    return _ai_answer(
+        df,
+        question
+    )
