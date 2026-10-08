@@ -399,8 +399,7 @@ if st.button(
         try:
 
             plan = generate_dashboard_plan(
-                analysis,
-                df
+                analysis
             )
 
             st.session_state.dashboard = plan
